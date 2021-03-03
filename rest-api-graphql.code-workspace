@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.autoSave": "afterDelay",
+		"files.autoSaveDelay": 1000,
+		"editor.tabSize": 2,
+		"editor.fontSize": 10,
+		"editor.wordWrap": "on",
+		"editor.tokenColorCustomizations": {
+			"[One Dark Pro]": {
+				"comments": "#6b7a70"
+			}
+		},
+		"workbench.colorCustomizations": {
+			"tab.activeBackground": "#024e27",
+			"tab.activeBorder": "#ff0000"
+		}
+	}
+}
