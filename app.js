@@ -1,4 +1,6 @@
+const fs = require('fs');
 const path = require('path');
+
 const bodyParser = require('body-parser');
 const multer = require('multer');
 const { graphqlHTTP } = require('express-graphql');
@@ -7,14 +9,15 @@ const express = require('express');
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
 const auth = require('./middleware/auth');
+const { clearImage } = require('./utils/file');
 
 const app = express();
 
 var fileStorage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: (req, file, cb) => {
     cb(null, 'images');
   },
-  filename: function(req, file, cb) {
+  filename: (req, file, cb) => {
     cb(null, new Date().toISOString() + '-' + file.originalname);
   }
 });
@@ -22,17 +25,18 @@ var fileStorage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   if(file.mimetype === 'image/png' ||
      file.mimetype === 'image/jpg' ||
-     file.mimetype === 'image/jpeg') {
+     file.mimetype === 'image/jpeg'
+  ) {
     cb(null, true);
   } else {
     cb(null, false);
   }
 }
 
-const MNGDB_URI = 'mongodb://localhost/messages_graphsql'
+const MNGDB_URI = 'mongodb://graphqldev:dev@localhost:27017/messages_graphql?authSource=messages_graphql';
 
 app.use(bodyParser.json());
-app.use(multer({storage: fileStorage, fileFilter: fileFilter}).single('image'))
+app.use(multer({ storage: fileStorage, fileFilter: fileFilter }).single('image'))
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 app.use( ( req, res, next ) => { // set headers before sending it out
@@ -44,20 +48,24 @@ app.use( ( req, res, next ) => { // set headers before sending it out
   }
   next();
 });
-
-app.use((error, req, res, next) => {
-  console.log(error);
-  const status = error.statusCode || 500;
-  const message = error.message;
-  const data = error.data;
-  res.status(status).json({ message: message, data: data });
-});
-
-app.put('/post-image', (req, res next) => {
-  
-})
 app.use(auth);
 
+app.put('/post-image', (req, res, next) => {
+  if(!req.isAuth) {
+    throw new Error('Not authenticated!');
+  }
+  if(!req.file) {
+    return res.status(200).json({ message: 'No file provided!'});
+  }
+  if(req.body.oldPath) {
+    clearImage(req.body.oldPath);
+  }
+  return res.status(201).json({ message: 'File saved successfully!', filePath: req.file.path });
+});
+
+/* because graphql is strictly json oriented application
+  here we use REST API method to save the file and and caputure the path
+  to save in dB via graphql */
 app.use('/graphql', graphqlHTTP({
     schema: graphqlSchema,
     rootValue: graphqlResolver,
@@ -73,6 +81,13 @@ app.use('/graphql', graphqlHTTP({
     }
   })
 );
+app.use((error, req, res, next) => {
+  console.log(error);
+  const status = error.statusCode || 500;
+  const message = error.message;
+  const data = error.data;
+  res.status(status).json({ message: message, data: data });
+});
 
 // connecting to DB
-require('./utils/db_connect')(app, MNGDB_URI)
+require('./utils/db_connect')(app, MNGDB_URI);
