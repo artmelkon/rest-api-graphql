@@ -1,0 +1,9 @@
+{
+  "name":"Graphql API - Production",
+  "dbConfig": {
+    "user": "graphqldev",
+    "pwd":"dev",
+    "port":"27017",
+    "dbName": "messages_graphql"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name":"Graphql API - Development",
+  "dbConfig": {
+    "user": "graphqldev",
+    "port":"27017",
+    "dbName": "messages_graphql"
+  }
+}
